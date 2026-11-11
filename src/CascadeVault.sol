@@ -2,8 +2,10 @@
 pragma solidity ^0.8.20;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import {ERC4626} from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
@@ -14,8 +16,10 @@ import {ICascadeStrategy} from "./interfaces/ICascadeStrategy.sol";
  * @notice ERC-4626 share vault with optional withdrawal fee and pluggable strategy.
  * @dev Fourth leg of the Cascade DeFi suite (after stablecoin, lending, dapp).
  *      Fees skim to `feeRecipient` on withdraw/redeem. Strategy defaults to IdleStrategy.
+ *      Vault shares implement EIP-2612 (`permit`) via OpenZeppelin `ERC20Permit` / EIP-712.
+ *      Underlying deposits can use `depositWithPermit` when the asset supports ERC-20 Permit.
  */
-contract CascadeVault is ERC4626, Ownable {
+contract CascadeVault is ERC4626, ERC20Permit, Ownable {
     using SafeERC20 for IERC20;
     using Math for uint256;
 
@@ -46,11 +50,38 @@ contract CascadeVault is ERC4626, Ownable {
         address owner_,
         address feeRecipient_,
         uint256 withdrawalFeeBps_
-    ) ERC20(name_, symbol_) ERC4626(asset_) Ownable(owner_) {
+    ) ERC20(name_, symbol_) ERC4626(asset_) ERC20Permit(name_) Ownable(owner_) {
         if (feeRecipient_ == address(0)) revert CascadeVault__ZeroAddress();
         if (withdrawalFeeBps_ > MAX_WITHDRAWAL_FEE_BPS) revert CascadeVault__FeeTooHigh();
         feeRecipient = feeRecipient_;
         withdrawalFeeBps = withdrawalFeeBps_;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                         PERMIT / EIP-712
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Deposit `assets` after EIP-2612 permit on the underlying (when supported).
+     * @dev Uses try/catch around `permit` so a frontrun of the same signature does not brick the deposit
+     *      (OpenZeppelin IERC20Permit security guidance). Caller must still have sufficient allowance.
+     */
+    function depositWithPermit(
+        uint256 assets,
+        address receiver,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public virtual returns (uint256 shares) {
+        IERC20Permit token = IERC20Permit(asset());
+        try token.permit(msg.sender, address(this), assets, deadline, v, r, s) {} catch {}
+        return deposit(assets, receiver);
+    }
+
+    /// @dev Resolve linearization between `ERC4626` and `ERC20` (`ERC20Permit` path).
+    function decimals() public view virtual override(ERC4626, ERC20) returns (uint8) {
+        return super.decimals();
     }
 
     /*//////////////////////////////////////////////////////////////
