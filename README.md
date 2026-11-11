@@ -49,7 +49,7 @@ Depositor                    Vault (ERC-4626)                 Underlying
 | `depositWithPermit` | Underlying EIP-2612 approval + deposit (try/catch tolerant to frontrun) |
 | `ICascadeStrategy` | `asset` / `totalAssets` / `deposit` / `withdraw` / `harvest` |
 | `IdleStrategy` | v0 default — assets sit in the strategy contract |
-| `HelperConfig` + `DeployVault` | Anvil mocks first; Sepolia placeholders only |
+| `HelperConfig` + `DeployVault` | Anvil mocks + Sepolia lending/dapp WETH broadcast |
 
 ### Fees (v0)
 
@@ -90,24 +90,43 @@ forge install
 forge test
 ```
 
-Anvil deploy stub:
+Anvil deploy:
 
 ```bash
-forge script script/DeployVault.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
+forge script script/DeployVault.s.sol:DeployVault --rpc-url http://127.0.0.1:8545 --broadcast
 ```
+
+Sepolia deploy (requires `SEPOLIA_RPC_URL`, `PRIVATE_KEY`, `ETHERSCAN_API_KEY` — never commit secrets):
+
+```bash
+forge script script/DeployVault.s.sol:DeployVault \
+  --rpc-url "$SEPOLIA_RPC_URL" --broadcast --verify -vvvv
+```
+
+Recorded addresses: [`deployments/sepolia.json`](./deployments/sepolia.json).
 
 ---
 
-## Sepolia WETH note (future)
+## Sepolia (live)
 
-Sepolia currently has **two** WETH addresses in the Cascade story — they are **not** interchangeable:
+| Contract | Address |
+|---|---|
+| CascadeVault (`cvWETH`) | [`0xDb56Bc666F3F76145325bA1433Ba67AD3eEE3d61`](https://sepolia.etherscan.io/address/0xDb56Bc666F3F76145325bA1433Ba67AD3eEE3d61#code) |
+| IdleStrategy | [`0x92D069059C9dA4532Ca0d60a466b865F45c59512`](https://sepolia.etherscan.io/address/0x92D069059C9dA4532Ca0d60a466b865F45c59512#code) |
+| Underlying WETH | [`0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9`](https://sepolia.etherscan.io/token/0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9) |
+
+Deployer `0x70E2…a1DC` · block `12112393` · script `DeployVault.s.sol`.
+
+### WETH note
+
+Sepolia has **two** WETH addresses in the Cascade story — they are **not** interchangeable:
 
 | Protocol | WETH | Address |
 |---|---|---|
 | defi-stablecoin (DSC collateral) | Uniswap WETH9 | `0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14` |
-| defi-lending / defi-dapp | Canonical Wrapped Ether | `0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9` |
+| defi-lending / defi-dapp / **this vault** | Canonical Wrapped Ether | `0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9` |
 
-v0 tests use **mocks only**. When Vault goes live, default underlying should follow **lending/dapp** if the strategy supplies into Cascade Lend.
+Local tests still use **mocks**. Live Sepolia vault underlying follows **lending/dapp** WETH.
 
 ---
 
