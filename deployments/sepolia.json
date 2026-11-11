@@ -1,0 +1,43 @@
+{
+  "network": "sepolia",
+  "chainId": 11155111,
+  "deployer": "0x70E2FccDD4bd53fDd1b9bE4d4cc992467576a1DC",
+  "blockNumber": 12112393,
+  "script": "script/DeployVault.s.sol:DeployVault",
+  "contracts": {
+    "CascadeVault": {
+      "address": "0xDb56Bc666F3F76145325bA1433Ba67AD3eEE3d61",
+      "txHash": "0xc817526e531f1966380391cc0f698045bbc0575bd7fa6e3e7688b833340fe918",
+      "name": "Cascade Vault WETH",
+      "symbol": "cvWETH",
+      "etherscan": "https://sepolia.etherscan.io/address/0xDb56Bc666F3F76145325bA1433Ba67AD3eEE3d61#code",
+      "sourcify": "exact_match",
+      "etherscanVerified": "pending_queue"
+    },
+    "IdleStrategy": {
+      "address": "0x92D069059C9dA4532Ca0d60a466b865F45c59512",
+      "txHash": "0x2d2f8a8e99737290c2aa8d2a45d0e019ea7eeae2f6c42e083d7518c919be345d",
+      "etherscan": "https://sepolia.etherscan.io/address/0x92D069059C9dA4532Ca0d60a466b865F45c59512#code",
+      "sourcify": "exact_match",
+      "etherscanVerified": "pending_queue"
+    },
+    "WETH": {
+      "address": "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9",
+      "note": "Canonical Sepolia WETH (lending/dapp); not deployed by this script",
+      "etherscan": "https://sepolia.etherscan.io/token/0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9"
+    }
+  },
+  "transactions": {
+    "CascadeVault": "0xc817526e531f1966380391cc0f698045bbc0575bd7fa6e3e7688b833340fe918",
+    "IdleStrategy": "0x2d2f8a8e99737290c2aa8d2a45d0e019ea7eeae2f6c42e083d7518c919be345d",
+    "setStrategy": "0x19933aad6bdad1d303bd9971a7ebf1918583bdf5e75c5d09333616bd367c57ce"
+  },
+  "notes": {
+    "asset": "lending/dapp WETH — not DSC Uniswap WETH9",
+    "withdrawalFeeBps": 0,
+    "feeRecipient": "0x70E2FccDD4bd53fDd1b9bE4d4cc992467576a1DC",
+    "sourcify": "exact_match on both contracts",
+    "etherscan": "verification submitted via forge --verify; API stayed Pending in queue / rate-limit — re-check Pass on Etherscan",
+    "dappFollowUp": "Wire cascadeVault / vaultAsset / idleStrategy into DiegoCascavita/defi-dapp deployments/sepolia.json"
+  }
+}
